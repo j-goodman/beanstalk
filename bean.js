@@ -52,7 +52,7 @@
 	  Dirt = __webpack_require__(5);
 	  Sky = __webpack_require__(6);
 	  Tree = __webpack_require__(7);
-	  objects = __webpack_require__(9);
+	  objects = __webpack_require__(10);
 	
 	  // 3. INITIALIZE CANVAS
 	  initializeCanvas = function () {
@@ -485,7 +485,7 @@
 	// REQUIRE DEPENDENCIES
 	var Bean; var objects;
 	Bean = __webpack_require__(8);
-	objects = __webpack_require__(9);
+	objects = __webpack_require__(10);
 	
 	Tree = function () {
 	  this.age = 0;
@@ -512,8 +512,8 @@
 	// REQUIRE DEPENDENCIES
 	var Sprite; var Mound; var objects;
 	Sprite = __webpack_require__(3);
-	Mound = __webpack_require__(10);
-	objects = __webpack_require__(9);
+	Mound = __webpack_require__(9);
+	objects = __webpack_require__(10);
 	
 	Bean = function (index, x, y, usedSlots) {
 	  this.age = 0;
@@ -576,14 +576,6 @@
 
 /***/ },
 /* 9 */
-/***/ function(module, exports) {
-
-	var objects = [];
-	module.exports = objects;
-
-
-/***/ },
-/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var Mound;
@@ -607,6 +599,14 @@
 	};
 	
 	module.exports = Mound;
+
+
+/***/ },
+/* 10 */
+/***/ function(module, exports) {
+
+	var objects = [];
+	module.exports = objects;
 
 
 /***/ }
