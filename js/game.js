@@ -1,11 +1,12 @@
 Window.newGame = function () {
   var initializeCanvas; var initializeKeyControls; var initializeWorld; var play;
   // 1. REQUIRE DEPENDENCIES
-  var Guy; var Dirt; var Sky; var Tree; var objects;
+  var Guy; var Dirt; var Sky; var Tree; var Shovel; var objects;
   Guy = require('./guy.js');
   Dirt = require('./dirt.js');
   Sky = require('./sky.js');
   Tree = require('./tree.js');
+  Shovel = require('./shovel.js');
   objects = require('./objects.js');
 
   // 3. INITIALIZE CANVAS
@@ -31,6 +32,8 @@ Window.newGame = function () {
         player.upKeyDown();
       } else if (event.keyCode === 40) {
         player.downKeyDown();
+      } else if (event.keyCode === 32) {
+        player.spaceKeyDown();
       }
     };
     document.onkeyup = function (event) {
@@ -44,7 +47,7 @@ Window.newGame = function () {
 
   // 5. INITIALIZE WORLD
   initializeWorld = function () {
-    var player; var aa;
+    var player; var aa; var slotMap;
     player = new Guy (0, 200, 368);
     initializeKeyControls(player);
     objects.push(player);
@@ -52,7 +55,9 @@ Window.newGame = function () {
     for (aa=0 ; aa<27 ; aa++) {
       objects.push(new Dirt (0, 32*aa, 448));
     }
-    objects.push(new Tree ());
+    slotMap = {};
+    objects.push(new Tree (slotMap));
+    objects.push(new Shovel (objects.length, 64, 336, slotMap));
   };
 
   // 6. PLAY

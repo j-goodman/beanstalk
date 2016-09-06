@@ -4,17 +4,17 @@ var Bean; var objects;
 Bean = require('./bean.js');
 objects = require('./objects.js');
 
-Tree = function () {
+Tree = function (slotMap) {
   this.age = 0;
-  this.usedSlots = {};
+  this.slotMap = slotMap;
 };
 
 Tree.prototype.move = function () {
   var dropSpot;
   this.age++;
-  if (!Math.floor(Math.random()*320) || this.age === 20) {
+  if (!Math.floor(Math.random()*270) || [20, 100, 200].includes(this.age)) {
     dropSpot = Math.round(Math.random()*27)*32;
-    objects.push(new Bean (objects.length, dropSpot, -32, this.usedSlots));
+    objects.push(new Bean (objects.length, dropSpot, -32, this.slotMap));
   }
 };
 
