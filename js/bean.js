@@ -5,13 +5,14 @@ Sprite = require('./sprite.js');
 Mound = require('./mound.js');
 objects = require('./objects.js');
 
-Bean = function (index, x, y, usedSlots) {
+Bean = function (index, x, y, slotMap) {
+  this.type = 'bean';
   this.age = 0;
   this.index = index;
   this.spriteSize = 32;
   this.carried = false;
   this.player = objects[0];
-  this.usedSlots = usedSlots;
+  this.slotMap = slotMap;
   this.pos = {
     x: x,
     y: y,
@@ -50,13 +51,18 @@ Bean.prototype.move = function () {
     this.pos.x = this.player.pos.x;
     this.pos.y = this.player.pos.y-32;
   }
+  if (this.pos.y > this.groundLevel+320) {
+    this.destroy();
+  }
   this.checkForCatch();
 };
 
 Bean.prototype.plant = function () {
-  if (!this.usedSlots[this.pos.x]) {
-    objects.push(new Mound (0, this.pos.x, this.groundLevel-this.spriteSize+4));
-    this.usedSlots[this.pos.x] = true;
+  var mound;
+  if (!this.slotMap[this.pos.x]) {
+    mound = new Mound (objects.length, this.pos.x, this.groundLevel-this.spriteSize+4);
+    objects.push(mound);
+    this.slotMap[this.pos.x] = mound;
     this.destroy();
   }
 };

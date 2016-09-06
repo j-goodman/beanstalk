@@ -28,7 +28,7 @@ sky = function () {
     this.hour = this.time%2400;
     if (this.hour>=0 && this.hour<600) {
     // SUNSET
-      progress = this.hour/600;
+      progress = this.hour/500;
       this.palette.red = Math.floor((this.day.red*(1-progress) + this.dusk.red*(progress)));
       this.palette.green = Math.floor((this.day.green*(1-progress) + this.dusk.green*(progress)));
       this.palette.blue = Math.floor((this.day.blue*(1-progress) + this.dusk.blue*(progress)));

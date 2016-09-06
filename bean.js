@@ -47,12 +47,13 @@
 	Window.newGame = function () {
 	  var initializeCanvas; var initializeKeyControls; var initializeWorld; var play;
 	  // 1. REQUIRE DEPENDENCIES
-	  var Guy; var Dirt; var Sky; var Tree; var objects;
+	  var Guy; var Dirt; var Sky; var Tree; var Shovel; var objects;
 	  Guy = __webpack_require__(1);
 	  Dirt = __webpack_require__(5);
 	  Sky = __webpack_require__(6);
 	  Tree = __webpack_require__(7);
-	  objects = __webpack_require__(9);
+	  Shovel = __webpack_require__(11);
+	  objects = __webpack_require__(10);
 	
 	  // 3. INITIALIZE CANVAS
 	  initializeCanvas = function () {
@@ -77,6 +78,8 @@
 	        player.upKeyDown();
 	      } else if (event.keyCode === 40) {
 	        player.downKeyDown();
+	      } else if (event.keyCode === 32) {
+	        player.spaceKeyDown();
 	      }
 	    };
 	    document.onkeyup = function (event) {
@@ -90,7 +93,7 @@
 	
 	  // 5. INITIALIZE WORLD
 	  initializeWorld = function () {
-	    var player; var aa;
+	    var player; var aa; var slotMap;
 	    player = new Guy (0, 200, 368);
 	    initializeKeyControls(player);
 	    objects.push(player);
@@ -98,7 +101,9 @@
 	    for (aa=0 ; aa<27 ; aa++) {
 	      objects.push(new Dirt (0, 32*aa, 448));
 	    }
-	    objects.push(new Tree ());
+	    slotMap = {};
+	    objects.push(new Tree (slotMap));
+	    objects.push(new Shovel (objects.length, 64, 336, slotMap));
 	  };
 	
 	  // 6. PLAY
@@ -184,12 +189,18 @@
 	};
 	
 	Guy.prototype.downKeyDown = function () {
-	  if (this.handsFull) {
-	    this.handsFull.carried = false;
-	    this.handsFull.checkForCatch = function () {};
-	    this.handsFull.pos.x = Math.round(this.handsFull.pos.x/32)*32;
-	    this.handsFull.speed.y = 9;
-	    this.handsFull = false;
+	  if (this.handsFull && this.handsFull.type === 'bean') {
+	    this.throwBean();
+	  } else if (this.handsFull && this.handsFull.type === 'shovel') {
+	    this.throwShovel();
+	  }
+	};
+	
+	Guy.prototype.spaceKeyDown = function () {
+	  if (this.handsFull && this.handsFull.type === 'bean') {
+	    this.throwBean();
+	  } else if (this.handsFull && this.handsFull.type === 'shovel') {
+	    this.handsFull.dig();
 	  }
 	};
 	
@@ -203,6 +214,21 @@
 	  if (this.speed.x < 0) {
 	    this.speed.x = 0;
 	  }
+	};
+	
+	Guy.prototype.throwBean = function () {
+	  this.handsFull.carried = false;
+	  this.handsFull.checkForCatch = function () {};
+	  this.handsFull.pos.x = Math.floor(this.handsFull.pos.x/32)*32;
+	  this.handsFull.speed.y = 9;
+	  this.handsFull = false;
+	};
+	
+	Guy.prototype.throwShovel = function () {
+	  this.handsFull.carried = false;
+	  this.handsFull.rest();
+	  this.handsFull.speed.x = this.facing==='left' ? -16 : 16;
+	  this.handsFull = false;
 	};
 	
 	module.exports = Guy;
@@ -444,7 +470,7 @@
 	    this.hour = this.time%2400;
 	    if (this.hour>=0 && this.hour<600) {
 	    // SUNSET
-	      progress = this.hour/600;
+	      progress = this.hour/500;
 	      this.palette.red = Math.floor((this.day.red*(1-progress) + this.dusk.red*(progress)));
 	      this.palette.green = Math.floor((this.day.green*(1-progress) + this.dusk.green*(progress)));
 	      this.palette.blue = Math.floor((this.day.blue*(1-progress) + this.dusk.blue*(progress)));
@@ -485,19 +511,19 @@
 	// REQUIRE DEPENDENCIES
 	var Bean; var objects;
 	Bean = __webpack_require__(8);
-	objects = __webpack_require__(9);
+	objects = __webpack_require__(10);
 	
-	Tree = function () {
+	Tree = function (slotMap) {
 	  this.age = 0;
-	  this.usedSlots = {};
+	  this.slotMap = slotMap;
 	};
 	
 	Tree.prototype.move = function () {
 	  var dropSpot;
 	  this.age++;
-	  if (!Math.floor(Math.random()*320) || this.age === 20) {
+	  if (!Math.floor(Math.random()*270) || [20, 100, 200].includes(this.age)) {
 	    dropSpot = Math.round(Math.random()*27)*32;
-	    objects.push(new Bean (objects.length, dropSpot, -32, this.usedSlots));
+	    objects.push(new Bean (objects.length, dropSpot, -32, this.slotMap));
 	  }
 	};
 	
@@ -512,16 +538,17 @@
 	// REQUIRE DEPENDENCIES
 	var Sprite; var Mound; var objects;
 	Sprite = __webpack_require__(3);
-	Mound = __webpack_require__(10);
-	objects = __webpack_require__(9);
+	Mound = __webpack_require__(9);
+	objects = __webpack_require__(10);
 	
-	Bean = function (index, x, y, usedSlots) {
+	Bean = function (index, x, y, slotMap) {
+	  this.type = 'bean';
 	  this.age = 0;
 	  this.index = index;
 	  this.spriteSize = 32;
 	  this.carried = false;
 	  this.player = objects[0];
-	  this.usedSlots = usedSlots;
+	  this.slotMap = slotMap;
 	  this.pos = {
 	    x: x,
 	    y: y,
@@ -560,13 +587,18 @@
 	    this.pos.x = this.player.pos.x;
 	    this.pos.y = this.player.pos.y-32;
 	  }
+	  if (this.pos.y > this.groundLevel+320) {
+	    this.destroy();
+	  }
 	  this.checkForCatch();
 	};
 	
 	Bean.prototype.plant = function () {
-	  if (!this.usedSlots[this.pos.x]) {
-	    objects.push(new Mound (0, this.pos.x, this.groundLevel-this.spriteSize+4));
-	    this.usedSlots[this.pos.x] = true;
+	  var mound;
+	  if (!this.slotMap[this.pos.x]) {
+	    mound = new Mound (objects.length, this.pos.x, this.groundLevel-this.spriteSize+4);
+	    objects.push(mound);
+	    this.slotMap[this.pos.x] = mound;
 	    this.destroy();
 	  }
 	};
@@ -576,20 +608,13 @@
 
 /***/ },
 /* 9 */
-/***/ function(module, exports) {
-
-	var objects = [];
-	module.exports = objects;
-
-
-/***/ },
-/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var Mound;
 	// REQUIRE DEPENDENCIES
-	var Sprite;
+	var Sprite; var objects;
 	Sprite = __webpack_require__(3);
+	objects = __webpack_require__(10);
 	
 	Mound = function (index, x, y) {
 	  this.age = 0;
@@ -599,14 +624,175 @@
 	    x: x,
 	    y: y,
 	  };
-	  this.sprite = new Sprite(this.spriteSize, this.spriteSize, 0, ["mound.gif"]);
+	  this.sprites = {
+	    plant: new Sprite(this.spriteSize, this.spriteSize, 0, ["mound.gif"]),
+	    highlight: new Sprite(this.spriteSize, this.spriteSize, 0, ["mound_highlight.gif"]),
+	    pluck: new Sprite(this.spriteSize, this.spriteSize, 1, [
+	      "mound_pluck/0.gif",
+	      "mound_pluck/1.gif",
+	      "mound_pluck/2.gif",
+	      "mound_pluck/3.gif",
+	    ]),
+	  };
+	  this.sprite = this.sprites.plant;
+	};
+	
+	Mound.prototype.destroy = function () {
+	  delete objects[this.index];
 	};
 	
 	Mound.prototype.move = function () {
 	  this.age++;
 	};
 	
+	Mound.prototype.highlight = function () {
+	  if (!this.plucking) {
+	    this.sprite = this.sprites.highlight;
+	    setTimeout(function () {
+	      if (!this.plucking) {
+	        this.sprite = this.sprites.plant;
+	      }
+	    }.bind(this), 200);
+	  }
+	};
+	
+	Mound.prototype.pluck = function () {
+	  this.plucking = true;
+	  this.sprite = this.sprites.pluck;
+	  this.sprite.addAnimationEndCallback(function () {
+	    this.destroy();
+	  }.bind(this));
+	};
+	
 	module.exports = Mound;
+
+
+/***/ },
+/* 10 */
+/***/ function(module, exports) {
+
+	var objects = [];
+	module.exports = objects;
+
+
+/***/ },
+/* 11 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var Shovel;
+	// REQUIRE DEPENDENCIES
+	var Sprite; var Mound; var objects;
+	Sprite = __webpack_require__(3);
+	Mound = __webpack_require__(9);
+	objects = __webpack_require__(10);
+	
+	Shovel = function (index, x, y, slotMap) {
+	  this.type = 'shovel';
+	  this.age = 0;
+	  this.index = index;
+	  this.spriteSize = 32;
+	  this.carried = false;
+	  this.player = objects[0];
+	  this.slotMap = slotMap;
+	  this.pos = {
+	    x: x,
+	    y: y,
+	  };
+	  this.speed = {
+	    x: 0,
+	    y: 3,
+	  };
+	  this.accel = {
+	    x: 0,
+	    y: objects[0].accel.y,
+	  };
+	  this.friction = {
+	    x: 0.1,
+	    y: 0,
+	  };
+	  this.groundLevel = 448;
+	  this.sprites = {
+	    rest: new Sprite(this.spriteSize, this.spriteSize, 0, ["shovel.gif"]),
+	    hold: new Sprite(this.spriteSize, this.spriteSize, 0, ["shovel_hold.gif"]),
+	    use: new Sprite(this.spriteSize, this.spriteSize, 0, ["shovel_use.gif"]),
+	  };
+	  this.sprite = this.sprites.rest;
+	};
+	
+	Shovel.prototype.checkForCatch = function () {
+	  if ( !this.player.handsFull && !this.resting &&
+	      Math.abs(this.pos.x-this.player.pos.x) < 32 &&
+	      Math.abs(this.pos.y-this.player.pos.y) < 32) {
+	    this.speed.x = 0;
+	    this.speed.y = 0;
+	    this.player.handsFull = this;
+	    this.carried = true;
+	  }
+	};
+	
+	Shovel.prototype.destroy = function () {
+	  delete objects[this.index];
+	};
+	
+	Shovel.prototype.dig = function () {
+	  this.inUse = true;
+	  if (this.slotMap[Math.floor((this.pos.x+16)/32)*32]) {
+	    this.slotMap[Math.floor((this.pos.x+16)/32)*32].pluck();
+	  }
+	  setTimeout(function () {
+	    this.inUse = false;
+	  }.bind(this), 180);
+	};
+	
+	Shovel.prototype.highlightTarget = function () {
+	  if (this.slotMap[Math.floor((this.pos.x+16)/32)*32]) {
+	    this.slotMap[Math.floor((this.pos.x+16)/32)*32].highlight();
+	  }
+	};
+	
+	Shovel.prototype.land = function () {
+	  if (this.pos.y > this.groundLevel-this.spriteSize) {
+	    this.pos.y = this.groundLevel-this.spriteSize;
+	  }
+	};
+	
+	Shovel.prototype.move = function () {
+	  this.age++;
+	  this.pos.x += this.speed.x;
+	  this.pos.y += this.speed.y;
+	  this.speed.x += this.accel.x;
+	  this.speed.y += this.accel.y;
+	  this.speed.x *= 1-this.friction.x;
+	  this.speed.y *= 1-this.friction.y;
+	  this.land();
+	  this.updateSprites();
+	  if (this.carried) {
+	    this.pos.x = this.player.pos.x;
+	    this.pos.y = this.player.pos.y;
+	    this.highlightTarget();
+	  }
+	  if (this.pos.y > this.groundLevel+320) {
+	    this.destroy();
+	  }
+	  this.checkForCatch();
+	};
+	
+	Shovel.prototype.rest = function () {
+	  this.resting = true;
+	  setTimeout(function () {
+	    this.resting = false;
+	  }.bind(this), 400);
+	};
+	
+	Shovel.prototype.updateSprites = function () {
+	  if (this.inUse) {
+	    this.sprite = this.sprites.use;
+	  } else {
+	    this.sprite = this.carried ? this.sprites.hold : this.sprites.rest;
+	  }
+	};
+	
+	module.exports = Shovel;
 
 
 /***/ }

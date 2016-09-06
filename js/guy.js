@@ -50,12 +50,18 @@ Guy.prototype.upKeyDown = function () {
 };
 
 Guy.prototype.downKeyDown = function () {
-  if (this.handsFull) {
-    this.handsFull.carried = false;
-    this.handsFull.checkForCatch = function () {};
-    this.handsFull.pos.x = Math.round(this.handsFull.pos.x/32)*32;
-    this.handsFull.speed.y = 9;
-    this.handsFull = false;
+  if (this.handsFull && this.handsFull.type === 'bean') {
+    this.throwBean();
+  } else if (this.handsFull && this.handsFull.type === 'shovel') {
+    this.throwShovel();
+  }
+};
+
+Guy.prototype.spaceKeyDown = function () {
+  if (this.handsFull && this.handsFull.type === 'bean') {
+    this.throwBean();
+  } else if (this.handsFull && this.handsFull.type === 'shovel') {
+    this.handsFull.dig();
   }
 };
 
@@ -69,6 +75,21 @@ Guy.prototype.leftKeyUp = function () {
   if (this.speed.x < 0) {
     this.speed.x = 0;
   }
+};
+
+Guy.prototype.throwBean = function () {
+  this.handsFull.carried = false;
+  this.handsFull.checkForCatch = function () {};
+  this.handsFull.pos.x = Math.floor(this.handsFull.pos.x/32)*32;
+  this.handsFull.speed.y = 9;
+  this.handsFull = false;
+};
+
+Guy.prototype.throwShovel = function () {
+  this.handsFull.carried = false;
+  this.handsFull.rest();
+  this.handsFull.speed.x = this.facing==='left' ? -16 : 16;
+  this.handsFull = false;
 };
 
 module.exports = Guy;
